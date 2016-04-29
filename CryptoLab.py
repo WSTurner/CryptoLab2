@@ -27,7 +27,7 @@ userCount = 2
 
 
 # empty strings to store the keys to be used for encryption, decryption, signing, and verifying
-delta = 2**5
+delta = 2**123
 n = 2
 m = 0
 
@@ -53,32 +53,30 @@ def lengthMatchHash(message, size):
         for x in xrange(2, len(test)):
                 a = xor(a, test[x])
         return a
-                
-# http://stackoverflow.com/questions/11119632/bitwise-xor-of-hex-numbers-in-python
-def xor(a, b):
-        if len(a) > len(b):
-                return '%x' % (int(a[:len(b)],16)^int(b,16))
-        else:
-                return '%x' % (int(a,16)^int(b[:len(a)],16))
 
+def tempLengthMatchHash(message, size):
+        hashLength = size / 4
+        test = textwrap.wrap(message, hashLength)
+        a = xor(test[0], test[1])
+        for x in xrange(2, len(test)):
+                a = xor(a, test[x])
+        return a
+
+def xor(a, b):
+        return '%x' % (int(a,16)^int(b,16))
+                
 def decryptData(ciphertexts, iteration, secretArray):
         decryptKey = 0
         for x in xrange(0,len(secretArray)):
                 hmacSignature = signHMAC(secretArray[x], str(iteration))
                 partialKey = lengthMatchHash(hmacSignature, len(m) * 4)
                 decryptKey += int(partialKey, 16)
-        total = "%x" % decryptKey
-        key = int(total, 16) % int(m, 16)
-        print key
+        key = decryptKey % int(m, 16)
 
         total = 0;
-        print "Totals:"
-        print ciphertexts
         for x in xrange(0,len(ciphertexts)):
-                total = total + ciphertexts[x] - key
-                print total
-        total = total % int(m, 16)
-        print "Return:"
+                total = total + ciphertexts[x]
+        total = (total  - key) % int(m, 16)
         return total
 
 # Receives an AES encrypted message and an RSA signed SHA256 hash of a message it then verifies the entegrity and prints the decrypted message
@@ -93,10 +91,7 @@ def encryptData(data, iteration, secretArray):
                 hmacSignature = signHMAC(secretArray[x], str(iteration))
                 partialKey = lengthMatchHash(hmacSignature, len(m) * 4)
                 encryptKey += int(partialKey, 16)
-        total = "%x" % encryptKey
-        key = int(total, 16) % int(m, 16)
-        print "Key:"
-        print key
+        key = encryptKey % int(m, 16)
         cipherText = (key + data) % int(m, 16)
         return cipherText
 
@@ -109,15 +104,9 @@ secretCount = 10 * userCount - 1
 for x in xrange(0,secretCount):
         a.append(generateSecret())
 secretArray = a
-print "Secret Array"
-print secretArray
-print
 
 chunks = [secretArray[x:x+10] for x in xrange(0, len(secretArray), 10)]
 random.shuffle(secretArray)
-print secretArray
-print chunks[0]
-print chunks[1]
 
 # user 1
 data1 = encryptData(13, 1, chunks[0])
@@ -128,12 +117,14 @@ print total
 
 
 
-
-
-
-
-
-
+# a = 1
+# b = signHMAC("c5c1195648d30ee4", str(a))
+# print b
+# c = tempLengthMatchHash(b, 8)
+# print c
+# print 
+# d = 0x09 ^ 0x5f
+# print "%x" % d
 
 
 
